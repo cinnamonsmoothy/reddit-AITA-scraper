@@ -7,6 +7,8 @@ import math
 import streamlit as st
 from connection.mongo import MongoDBConnection
 import logging
+import pymongo
+
 
 FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
 logging.basicConfig(format=FORMAT)
@@ -40,12 +42,36 @@ tab1, tab2 = st.tabs(['Find Best Story', 'Query All Stories'])
 
 
 def save_to_mongo(connection, data):
-    connection.insert(data)
+    for key, value in data.items():
+        connection.insert(value)
     logger.info(f"Data saved to mongodb instance {connection}")
 
-add_data = st.button(label="add data")
-if add_data:
-    save_to_mongo(mongodb_connection, {"title": "test title", "body": "lorem ipsum...."})
+
+
+def get_best_post():
+    # Fetch data from MongoDB using the find method with the specified filter
+    highest_score_post = None
+    highest_score = 0
+
+    # Retrieve all documents from the database
+    all_documents = mongodb_connection.find({})
+
+    # Iterate over all documents in the database
+    for document in all_documents:
+        # Check if the "score" field is present in the document
+        if "score" in document:
+            # Get the "score" value from the document
+            score = document["score"]
+            
+            # Check if the current score is higher than the highest score
+            if score > highest_score:
+                highest_score = score
+                highest_score_post = document
+
+    # Display the document with the highest score
+    if highest_score_post:
+        return highest_score_post
+    
 
 def scrape_posts_to_dict(subreddit_name, hours_ago, min_comments):
     current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -65,6 +91,7 @@ def scrape_posts_to_dict(subreddit_name, hours_ago, min_comments):
 
         post_info = {
             'title': post.title,
+            'self_text': post.selftext,
             'url': post.url,
             'num_comments': post.num_comments,
             'time_ago': time_ago,
@@ -105,14 +132,13 @@ def scrape_posts_to_csv(subreddit_name, hours_ago, min_comments):
 
 # Function to query posts from posts.csv based on score threshold
 def query_posts_by_score(score_threshold):
-    posts = []
-    with open('posts.csv', 'r', encoding='utf-8') as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
-            score = float(row['score'])
-            if score >= score_threshold:
-                posts.append(row)
-    return posts
+    posts = mongodb_connection.find({})
+    keep_posts = []
+    for post in posts:
+        score = float(post['score'])
+        if score >= score_threshold:
+            keep_posts.append(post)
+    return keep_posts
 
 with tab1:
 # Streamlit App
@@ -130,23 +156,15 @@ with tab1:
 
     with st.spinner('Grabbing Best Story...'):
         if submitted:
-            # Scrape Reddit posts and write to CSV
-            scrape_posts_to_csv('AmITheAsshole', hours_ago, min_comments)
+            # Delete all existing posts from mongo db
+            mongodb_connection.delete({})
+
+            # Scrape Reddit posts and save to mongodb
             data = scrape_posts_to_dict('AmITheAsshole', hours_ago, min_comments)
-            
-            # save to mongo
             save_to_mongo(mongodb_connection, data)
-            
-            # Read the CSV and find the story with the highest score
-            with open('posts.csv', 'r', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
-                max_score = -1
-                best_story = None
-                for row in reader:
-                    score = float(row['score'])
-                    if score > max_score:
-                        max_score = score
-                        best_story = row
+
+            # get the story with the highest score
+            best_story = get_best_post()
 
             if best_story:
                 # Typing animation for the story title
