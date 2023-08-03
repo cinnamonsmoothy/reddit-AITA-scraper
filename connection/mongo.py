@@ -30,7 +30,7 @@ class MongoDBConnection(ExperimentalBaseConnection[MongoClient]):
         @cache_data(ttl=ttl)
         def _find(filters: dict, **kwargs):
             mongo_id_proj = {"_id": 0} if not mongo_id else {}
-            kwargs["projection"] = kwargs.get("projection", {}) | mongo_id_proj
+            kwargs["projection"] = {**kwargs.get("projection", {}), **mongo_id_proj}
             if one:
                 return self._instance.find_one(filters or {}, **kwargs)
             return list(self._instance.find(filters or {}, **kwargs))
