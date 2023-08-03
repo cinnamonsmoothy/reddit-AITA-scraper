@@ -1,0 +1,34 @@
+<style>
+
+
+/* Hyperlink Colours */ 
+a:link {color: #DA6154;}
+a:visited {color: #DA6154;}
+a:hover {color: #943F37;}
+a:active {color: #943F37;}
+
+/* Button Customization */ 
+div.stButton > button:first-child{transition: all 0.15s ease-in-out; width: 100%;}
+
+
+/* Images Customization */ 
+img {
+    transition: transform .12s;
+    position: relative;
+    width: 100%;
+    border-radius: 5px;
+}
+
+img:hover {
+    transform: scale(1.05);
+    z-index: 1;
+    outline: 2.5px solid #fff04b;
+}
+
+img:hover + .image-caption {
+    z-index: -1;
+}
+
+
+
+</style>
