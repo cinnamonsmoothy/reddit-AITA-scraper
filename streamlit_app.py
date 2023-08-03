@@ -31,7 +31,7 @@ reddit = praw.Reddit(client_id='obIaevVI8E2FoyDdQoPRMQ',
 
 # mongodb_connection = st.experimental_connection("mongodb", type=MongoDBConnection)
 
-mongodb_connection = st.experimental_connect(
+mongodb_connection = st.experimental_connection(
     "mongodb",
     url="mongodb+srv://test:test@reddit-data.xoh1bzr.mongodb.net/?retryWrites=true&w=majority",
     database="streamlit",
