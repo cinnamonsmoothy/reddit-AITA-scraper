@@ -7,6 +7,8 @@ import math
 import streamlit as st
 from connection.mongo import MongoDBConnection
 import logging
+import pymongo
+
 
 FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
 logging.basicConfig(format=FORMAT)
@@ -43,9 +45,21 @@ def save_to_mongo(connection, data):
     connection.insert(data)
     logger.info(f"Data saved to mongodb instance {connection}")
 
+
+def get_best_post(connection):
+    post = connection.find_one(sort=[("score", pymongo.DESCENDING)])
+    return post
+
+
 add_data = st.button(label="add data")
 if add_data:
     save_to_mongo(mongodb_connection, {"title": "test title", "body": "lorem ipsum...."})
+
+
+# st.write(mongodb_connection.find(sort_by={"score": -1}, limit=3, ttl=0))
+
+st.write(mongodb_connection.find({"a": 55}))
+
 
 def scrape_posts_to_dict(subreddit_name, hours_ago, min_comments):
     current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -65,6 +79,7 @@ def scrape_posts_to_dict(subreddit_name, hours_ago, min_comments):
 
         post_info = {
             'title': post.title,
+            'self_text': post.selftext,
             'url': post.url,
             'num_comments': post.num_comments,
             'time_ago': time_ago,
