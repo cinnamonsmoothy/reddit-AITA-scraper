@@ -31,16 +31,62 @@ reddit = praw.Reddit(client_id='obIaevVI8E2FoyDdQoPRMQ',
 
 mongodb_connection = st.experimental_connection("mongodb", type=MongoDBConnection)
 
+# mongodb_connection = st.experimental_connection(
+#     "mongodb",
+#     url="mongodb+srv://test:test@reddit-data.xoh1bzr.mongodb.net/?retryWrites=true&w=majority",
+#     database="streamlit",
+#     collection="connection",
+#     kwargs={
+#         "retryWrites": "true",
+#         "w": "majority",
+#         "maxIdleTimeMS": 180000,
+#         "serverSelectionTimeoutMS": 2000
+#     }
+# )
+
+
 add_data = st.button(label="add data")
 if add_data:
     mongodb_connection.insert({"a": 55, "b": 6})
 
 
+# st.write(mongodb_connection.find({"a"}))
+
+
+
 tab1, tab2 = st.tabs(['Find Best Story', 'Query All Stories'])
 
 
-def save_to_mongo(data):
-    pass
+
+def scrape_posts_to_dict(subreddit_name, hours_ago, min_comments):
+    current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
+    time_threshold = current_time - timedelta(hours=hours_ago)
+
+    posts_dict = {}
+
+    for post in reddit.subreddit(subreddit_name).new(limit=None):
+        if post.created_utc < time_threshold.timestamp():
+            break
+        if post.num_comments < min_comments:
+            continue
+
+        created_utc = post.created_utc
+        time_ago = round(((current_time - datetime.utcfromtimestamp(created_utc).replace(tzinfo=timezone.utc)).total_seconds() / 60 / 60), 1)
+        score = round(post.num_comments / time_ago, 1)
+
+        post_info = {
+            'title': post.title,
+            'url': post.url,
+            'num_comments': post.num_comments,
+            'time_ago': time_ago,
+            'score': score,
+        }
+
+        posts_dict[post.id] = post_info
+
+    return posts_dict
+
+
 
 # Function to scrape posts and write to CSV
 def scrape_posts_to_csv(subreddit_name, hours_ago, min_comments):
@@ -93,11 +139,12 @@ with tab1:
 
         submitted = st.form_submit_button("Run", use_container_width=True)
 
+
     with st.spinner('Grabbing Best Story...'):
         if submitted:
             # Scrape Reddit posts and write to CSV
             scrape_posts_to_csv('AmITheAsshole', hours_ago, min_comments)
-
+            
             # Read the CSV and find the story with the highest score
             with open('posts.csv', 'r', encoding='utf-8') as csvfile:
                 reader = csv.DictReader(csvfile)
