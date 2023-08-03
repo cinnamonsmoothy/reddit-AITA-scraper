@@ -6,8 +6,12 @@ from datetime import datetime, timezone, timedelta
 import math
 import streamlit as st
 from connection.mongo import MongoDBConnection
+import logging
 
-
+FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
+logging.basicConfig(format=FORMAT)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 # streamlit app settings:
@@ -31,32 +35,17 @@ reddit = praw.Reddit(client_id='obIaevVI8E2FoyDdQoPRMQ',
 
 mongodb_connection = st.experimental_connection("mongodb", type=MongoDBConnection)
 
-# mongodb_connection = st.experimental_connection(
-#     "mongodb",
-#     url="mongodb+srv://test:test@reddit-data.xoh1bzr.mongodb.net/?retryWrites=true&w=majority",
-#     database="streamlit",
-#     collection="connection",
-#     kwargs={
-#         "retryWrites": "true",
-#         "w": "majority",
-#         "maxIdleTimeMS": 180000,
-#         "serverSelectionTimeoutMS": 2000
-#     }
-# )
-
-
-add_data = st.button(label="add data")
-if add_data:
-    mongodb_connection.insert({"a": 55, "b": 6})
-
-
-# st.write(mongodb_connection.find({"a"}))
-
-
 
 tab1, tab2 = st.tabs(['Find Best Story', 'Query All Stories'])
 
 
+def save_to_mongo(connection, data):
+    connection.insert(data)
+    logger.info(f"Data saved to mongodb instance {connection}")
+
+add_data = st.button(label="add data")
+if add_data:
+    save_to_mongo(mongodb_connection, {"title": "test title", "body": "lorem ipsum...."})
 
 def scrape_posts_to_dict(subreddit_name, hours_ago, min_comments):
     current_time = datetime.utcnow().replace(tzinfo=timezone.utc)
@@ -139,11 +128,14 @@ with tab1:
 
         submitted = st.form_submit_button("Run", use_container_width=True)
 
-
     with st.spinner('Grabbing Best Story...'):
         if submitted:
             # Scrape Reddit posts and write to CSV
             scrape_posts_to_csv('AmITheAsshole', hours_ago, min_comments)
+            data = scrape_posts_to_dict('AmITheAsshole', hours_ago, min_comments)
+            
+            # save to mongo
+            save_to_mongo(mongodb_connection, data)
             
             # Read the CSV and find the story with the highest score
             with open('posts.csv', 'r', encoding='utf-8') as csvfile:
