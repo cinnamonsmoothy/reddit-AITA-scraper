@@ -29,20 +29,20 @@ reddit = praw.Reddit(client_id='obIaevVI8E2FoyDdQoPRMQ',
                      client_secret='AIshZPMpTUhhGV9DKgRTkbHbU6vvUA',
                      user_agent='post scraper hourly')
 
-# mongodb_connection = st.experimental_connection("mongodb", type=MongoDBConnection)
+mongodb_connection = st.experimental_connection("mongodb", type=MongoDBConnection)
 
-mongodb_connection = st.experimental_connection(
-    "mongodb",
-    url="mongodb+srv://test:test@reddit-data.xoh1bzr.mongodb.net/?retryWrites=true&w=majority",
-    database="streamlit",
-    collection="connection",
-    kwargs={
-        "retryWrites": true,
-        "w": "majority",
-        "maxIdleTimeMS": 180000,
-        "serverSelectionTimeoutMS": 2000
-    }
-)
+# mongodb_connection = st.experimental_connection(
+#     "mongodb",
+#     url="mongodb+srv://test:test@reddit-data.xoh1bzr.mongodb.net/?retryWrites=true&w=majority",
+#     database="streamlit",
+#     collection="connection",
+#     kwargs={
+#         "retryWrites": "true",
+#         "w": "majority",
+#         "maxIdleTimeMS": 180000,
+#         "serverSelectionTimeoutMS": 2000
+#     }
+# )
 
 
 add_data = st.button(label="add data")
@@ -50,7 +50,7 @@ if add_data:
     mongodb_connection.insert({"a": 55, "b": 6})
 
 
-st.write(mongodb_connection.find({"a"}))
+# st.write(mongodb_connection.find({"a"}))
 
 
 
