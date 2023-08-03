@@ -5,6 +5,7 @@ from time import sleep
 from datetime import datetime, timezone, timedelta
 import math
 import streamlit as st
+from connection.mongo import MongoDBConnection
 
 
 
@@ -27,6 +28,12 @@ st.markdown(open('style.css').read(), unsafe_allow_html=True)
 reddit = praw.Reddit(client_id='obIaevVI8E2FoyDdQoPRMQ',
                      client_secret='AIshZPMpTUhhGV9DKgRTkbHbU6vvUA',
                      user_agent='post scraper hourly')
+
+mongodb_connection = st.experimental_connection("mongodb", type=MongoDBConnection)
+
+add_data = st.button(label="add data")
+if add_data:
+    mongodb_connection.insert({"a": 55, "b": 6})
 
 
 tab1, tab2 = st.tabs(['Find Best Story', 'Query All Stories'])
