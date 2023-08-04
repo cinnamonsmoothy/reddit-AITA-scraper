@@ -3,11 +3,10 @@ import praw
 import csv
 from time import sleep
 from datetime import datetime, timezone, timedelta
-import math
 import streamlit as st
 from connection.mongo import MongoDBConnection
 import logging
-import pymongo
+import toml
 
 
 FORMAT = '%(asctime)s %(clientip)-15s %(user)-8s %(message)s'
@@ -23,17 +22,20 @@ st.set_page_config(
     initial_sidebar_state='collapsed',
 )
 
-
-
 # Custom CSS
 st.markdown(open('style.css').read(), unsafe_allow_html=True)
 
+# Reddit API credentials via reading the secrets.toml file
+secrets = toml.load(".streamlit/secrets.toml")
+client_id = secrets["reddit"]["client_id"]
+client_secret = secrets["reddit"]["client_secret"]
+user_agent = secrets["reddit"]["user_agent"]
 
-
-# Reddit API credentials
-reddit = praw.Reddit(client_id='obIaevVI8E2FoyDdQoPRMQ',
-                     client_secret='AIshZPMpTUhhGV9DKgRTkbHbU6vvUA',
-                     user_agent='post scraper hourly')
+reddit = praw.Reddit(
+    client_id=client_id,
+    client_secret=client_secret,
+    user_agent=user_agent
+)
 
 mongodb_connection = st.experimental_connection("mongodb", type=MongoDBConnection)
 
